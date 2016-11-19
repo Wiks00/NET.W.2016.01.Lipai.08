@@ -2,8 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Task3
 {
@@ -121,7 +119,10 @@ namespace Task3
         /// <returns>enumeration of CustomSet</returns>
         public IEnumerator<T> GetEnumerator()
         {
-            return new Enumerator(this);
+            for (var i = 0; i < realSize; i++)
+            {
+                yield return structArray[i];
+            }
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -225,11 +226,29 @@ namespace Task3
         {
             if(ReferenceEquals(other,null))
                 throw new ArgumentNullException();
-            foreach (var item in other)
-            {
-                Add(item);
-            }
+
+            var temp = this.Union(other).ToArray();
+            Array.Clear(structArray, 0, realSize);
+
+            temp.CopyTo(structArray, 0);
+            realSize = temp.Length;
         }
+
+        /// <summary>
+        /// Create new set so that it contains all elements that are present in the leftCollection, in the rightCollection, or in both
+        /// </summary>
+        /// <param name="leftCollection">The collection to compare</param>
+        /// <param name="rightCollection">The collection to compare</param>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <returns>new CustomSet</returns>
+        public static CustomSet<T> UnionWith(IEnumerable<T> leftCollection, IEnumerable<T> rightCollection)
+        {
+            if(ReferenceEquals(leftCollection,null) || ReferenceEquals(rightCollection,null))
+                throw new ArgumentNullException();
+
+            return new CustomSet<T>(leftCollection.Union(rightCollection));
+        }
+
 
         /// <summary>
         /// Modifies the current set so that it contains only elements that are also in a specified collection
@@ -240,11 +259,27 @@ namespace Task3
         {
             if (ReferenceEquals(other, null))
                 throw new ArgumentNullException();
-            foreach (var item in other)
-            {
-                if(Contains(item))
-                    Remove(item);
-            }
+
+            var temp = this.Intersect(other).ToArray();
+            Array.Clear(structArray, 0, realSize);
+
+            temp.CopyTo(structArray, 0);
+            realSize = temp.Length;
+        }
+
+        /// <summary>
+        /// Create new set so that it contains only elements that are also in a leftCollection and rightCollection
+        /// </summary>
+        /// <param name="leftCollection">The collection to compare</param>
+        /// <param name="rightCollection">The collection to compare</param>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <returns>new CustomSet</returns>
+        public static CustomSet<T> IntersectWith(IEnumerable<T> leftCollection, IEnumerable<T> rightCollection)
+        {
+            if (ReferenceEquals(leftCollection, null) || ReferenceEquals(rightCollection, null))
+                throw new ArgumentNullException();
+
+            return new CustomSet<T>(leftCollection.Intersect(rightCollection));
         }
 
         /// <summary>
@@ -256,10 +291,27 @@ namespace Task3
         {
             if (ReferenceEquals(other, null))
                 throw new ArgumentNullException();
-            foreach (var item in other)
-            {
-                Remove(item);
-            }
+
+            var temp = this.Except(other).ToArray();
+            Array.Clear(structArray, 0, realSize);
+
+            temp.CopyTo(structArray, 0);
+            realSize = temp.Length;
+        }
+
+        /// <summary>
+        /// Removes all elements in the leftCollection from the rightCollection and create new set
+        /// </summary>
+        /// <param name="leftCollection">The collection to compare</param>
+        /// <param name="rightCollection">The collection to compare</param>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <returns>new CustomSet</returns>
+        public static CustomSet<T> ExceptWith(IEnumerable<T> leftCollection, IEnumerable<T> rightCollection)
+        {
+            if (ReferenceEquals(leftCollection, null) || ReferenceEquals(rightCollection, null))
+                throw new ArgumentNullException();
+
+            return new CustomSet<T>(leftCollection.Except(rightCollection));
         }
 
         /// <summary>
@@ -271,13 +323,27 @@ namespace Task3
         {
             if (ReferenceEquals(other, null))
                 throw new ArgumentNullException();
-            foreach (var item in other)
-            {
-                if (Contains(item))
-                    Remove(item);
-                else
-                    Add(item);
-            }
+
+            var temp = this.Concat(other).Except(this.Intersect(other)).ToArray();
+            Array.Clear(structArray,0,realSize);
+
+            temp.CopyTo(structArray,0);
+            realSize = temp.Length;
+        }
+
+        /// <summary>
+        /// Create new set so that it contains only elements that are present either in the leftCollection set or in the rightCollection, but not both
+        /// </summary>
+        /// <param name="leftCollection">The collection to compare</param>
+        /// <param name="rightCollection">The collection to compare</param>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <returns>new CustomSet</returns>
+        public static CustomSet<T> SymmetricExceptWith(IEnumerable<T> leftCollection, IEnumerable<T> rightCollection)
+        {
+            if (ReferenceEquals(leftCollection, null) || ReferenceEquals(rightCollection, null))
+                throw new ArgumentNullException();
+
+            return new CustomSet<T>(leftCollection.Concat(rightCollection).Except(leftCollection.Intersect(rightCollection)));
         }
         #endregion
 
@@ -366,68 +432,6 @@ namespace Task3
             return other.Count() == Count && other.All(Contains);
         }
         #endregion
-        #endregion
-
-        #region Enumerator for CustomQueue
-        /// <summary>
-        /// Custon Enumerator for CustomSet
-        /// </summary>
-        private struct Enumerator : IEnumerator<T>, IDisposable, IEnumerator
-        {
-            private CustomSet<T> set;
-            private int index;
-
-            /// <summary>
-            /// return cuurent item of enumeration 
-            /// </summary>
-            public T Current
-            {
-                get
-                {
-                    if (index < 0)
-                        throw new ArgumentOutOfRangeException();
-                    return set.structArray[index];
-                }
-            }
-
-            object IEnumerator.Current => Current;
-
-            /// <summary>
-            /// Constructor for creating Enumeration
-            /// </summary>
-            /// <param name="queue"></param>
-            internal Enumerator(CustomSet<T> set)
-            {
-                this.set = set;
-                index = -1;
-            }
-
-            /// <summary>
-            /// Dispose all resources
-            /// </summary>
-            public void Dispose()
-            {
-                index = -1;
-            }
-
-            /// <summary>
-            /// Step to the next item
-            /// </summary>
-            /// <returns>next item index</returns>
-            public bool MoveNext()
-            {
-                index++;
-                return index <= set.Count - 1;
-            }
-
-            /// <summary>
-            /// Reset enumeration
-            /// </summary>
-            public void Reset()
-            {
-                index = -1;
-            }
-        }
-        #endregion
+        #endregion     
     }
 }

@@ -34,10 +34,10 @@ namespace Task2.Tests
 
         private static readonly object[] sourceListsForCustomQueue_Dequeue =
         {
-            new object[] { new List<int>{ 1, 2 },
+            new object[] { new List<int>{ 4, 5 },
                            new []{ 1, 2, 3, 4, 5} },
 
-            new object[] { new List<int>{ 1, 2, 3, 5, 8},
+            new object[] { new List<int>{ 1597, 2584, 4181, 6765, 10946},
                            new []{ 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765, 10946 } }
         };
 
@@ -54,6 +54,8 @@ namespace Task2.Tests
             {
                 actual.Dequeue();
             }
+
+            var a = new List<int>(actual);
 
             Assert.AreEqual(expectedResult, new List<int>(actual));
         }

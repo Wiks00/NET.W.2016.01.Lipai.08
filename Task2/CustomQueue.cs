@@ -12,8 +12,10 @@ namespace Task2
     public class CustomQueue<T> : IEnumerable<T>, ICollection
     {
         #region private fields 
+        private const int emptyArrayLength = 5;
         private T[] structArray;
         private int realSize;
+        private int tail;
         private int currentInsertIndex;
         private static object syncRoot;
         #endregion
@@ -46,8 +48,9 @@ namespace Task2
         /// </summary>
         public CustomQueue()
         {
-            structArray = new T[5];
+            structArray = new T[emptyArrayLength];
             realSize = 0;
+            tail = 0;
             currentInsertIndex = 0;
         }
 
@@ -62,6 +65,7 @@ namespace Task2
                 throw new ArgumentOutOfRangeException();
 
             structArray = new T[length];
+            tail = 0;
             realSize = 0;
             currentInsertIndex = 0;
 
@@ -79,6 +83,7 @@ namespace Task2
             structArray = new T[collection.Count()];
 
             realSize = 0;
+            tail = 0;
             currentInsertIndex = 0;
 
             foreach (var item in collection)
@@ -162,7 +167,7 @@ namespace Task2
             if(realSize == 0)
                 throw new ArgumentException();
 
-            return structArray[currentInsertIndex - 1];
+            return structArray[tail];
         }
 
         /// <summary>
@@ -175,11 +180,14 @@ namespace Task2
             if (realSize == 0)
                 throw new ArgumentException();
 
-            currentInsertIndex--;
-            realSize--;
+            var item = structArray[tail];
+            structArray[tail] = default(T);
+            tail++;
 
-            var item = structArray[currentInsertIndex];
-            structArray[currentInsertIndex] = default(T);
+            if (tail == structArray.Length)
+                tail = 0;
+
+            realSize--;
 
             return item;
         }
@@ -190,10 +198,15 @@ namespace Task2
         /// <param name="item">added item</param>
         public void Enqueue(T item)
         {
-            if (realSize == structArray.Length)
+            if (currentInsertIndex == structArray.Length)
+            {
+                currentInsertIndex = 0;
+            }
+            if (currentInsertIndex == tail)
             {
                 Array.Resize(ref structArray, structArray.Length *2);
-            }
+                currentInsertIndex = realSize;
+            }            
             structArray[currentInsertIndex] = item;
             realSize++;
             currentInsertIndex++;
@@ -206,8 +219,10 @@ namespace Task2
         /// </summary>
         private struct Enumerator : IEnumerator<T>, IDisposable, IEnumerator
         {
-            private CustomQueue<T> queue;
+            private readonly CustomQueue<T> queue;
+            private readonly int size;
             private int index;
+            private int count;
 
             /// <summary>
             /// return cuurent item of enumeration 
@@ -231,7 +246,9 @@ namespace Task2
             internal Enumerator(CustomQueue<T> queue)
             {
                 this.queue = queue;
-                index = -1;
+                size = queue.Count;
+                index = queue.tail -1;
+                count = 0;
             }
 
             /// <summary>
@@ -240,6 +257,7 @@ namespace Task2
             public void Dispose()
             {
                 index = -1;
+                count = 0;
             }
 
             /// <summary>
@@ -247,9 +265,19 @@ namespace Task2
             /// </summary>
             /// <returns>next item index</returns>
             public bool MoveNext()
-            {
+            {   
+                if(count == size)
+                    return false;
+
                 index++;
-                return index <= queue.Count -1;
+                count++;
+
+                if (index == size)
+                {                    
+                    index = 0;
+                }
+               
+                return true;
             }
 
             /// <summary>
@@ -258,6 +286,7 @@ namespace Task2
             public void Reset()
             {
                 index = -1;
+                count = 0;
             }
         }
         #endregion
